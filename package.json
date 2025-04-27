@@ -1,0 +1,32 @@
+{
+  "type": "module",
+  "name": "rompendo-fronteiras-api",
+  "version": "1.0.0",
+  "description": "Projeto Rompendo Fronteiras: plataforma para a Igreja Missionária Evangélica Rompendo Fronteiras, com front-end em React e API em Node.js. Facilita a gestão de eventos, comunicação e serviços da igreja, proporcionando uma experiência moderna e acessível para a comunidade.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --import=tsx --watch --env-file=.env ./src/server.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MadsonSantosCe/rompendo-fronteiras-api.git"
+  },
+  "keywords": [],
+  "author": "Madson Santos",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MadsonSantosCe/rompendo-fronteiras-api/issues"
+  },
+  "homepage": "https://github.com/MadsonSantosCe/rompendo-fronteiras-api#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.15.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "tsx": "^4.19.3"
+  }
+}
