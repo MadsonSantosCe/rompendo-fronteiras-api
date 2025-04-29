@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { HttpError } from "../utils/http.errors";
+import { HandlerHttpError } from "../utils/http.errors";
 
 export function errorMiddleware(
     error: unknown,
@@ -10,7 +10,7 @@ export function errorMiddleware(
 
     console.error("Error:", error);
 
-    if (error instanceof HttpError) {
+    if (error instanceof HandlerHttpError) {
       res.status(error.status).json({ message: error.message });
       return;
     }

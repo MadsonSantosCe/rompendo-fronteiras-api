@@ -6,7 +6,7 @@ import {
   InternalServerErrorException,
 } from './http.errors';
 
-export function PrismaError(error: unknown): never {
+export function HandlePrismaError(error: unknown): never {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     switch (error.code) {
       case 'P2002':

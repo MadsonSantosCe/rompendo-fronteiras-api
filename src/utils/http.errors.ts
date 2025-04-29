@@ -1,45 +1,45 @@
-export class HttpError extends Error {
+export class HandlerHttpError extends Error {
   public status: number;
 
   constructor(status: number, message: string) {
     super(message);
     this.status = status;
     
-    Object.setPrototypeOf(this, HttpError.prototype);
+    Object.setPrototypeOf(this, HandlerHttpError.prototype);
   }
 }
 
-export class BadRequestException extends HttpError {
+export class BadRequestException extends HandlerHttpError {
   constructor(message = "Requisição inválida") {
     super(400, message);
   }
 }
 
-export class UnauthorizedException extends HttpError {
+export class UnauthorizedException extends HandlerHttpError {
   constructor(message = "Não autorizado") {
     super(401, message);
   }
 }
 
-export class ForbiddenException extends HttpError {
+export class ForbiddenException extends HandlerHttpError {
   constructor(message = "Acesso negado") {
     super(403, message);
   }
 }
 
-export class NotFoundException extends HttpError {
+export class NotFoundException extends HandlerHttpError {
   constructor(message = "Recurso não encontrado") {
     super(404, message);
   }
 }
 
-export class ConflictException extends HttpError {
+export class ConflictException extends HandlerHttpError {
   constructor(message = "Conflito de dados") {
     super(409, message);
   }
 }
 
-export class InternalServerErrorException extends HttpError {
+export class InternalServerErrorException extends HandlerHttpError {
   constructor(message = "Erro interno do servidor") {
     super(500, message);
   }
