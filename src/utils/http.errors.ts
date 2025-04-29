@@ -1,9 +1,11 @@
 export class HandlerHttpError extends Error {
   public status: number;
+  public datails?: any;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, datails?: any) {
     super(message);
     this.status = status;
+    this.datails = datails;
     
     Object.setPrototypeOf(this, HandlerHttpError.prototype);
   }

@@ -11,7 +11,7 @@ export function errorMiddleware(
     console.error("Error:", error);
 
     if (error instanceof HandlerHttpError) {
-      res.status(error.status).json({ message: error.message });
+      res.status(error.status).json({ message: error.message, details: error.datails });
       return;
     }
   
