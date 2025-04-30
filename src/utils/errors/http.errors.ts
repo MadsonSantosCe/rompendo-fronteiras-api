@@ -46,3 +46,15 @@ export class InternalServerErrorException extends HandlerHttpError {
     super(500, message);
   }
 }
+
+export class BadTokenException extends HandlerHttpError {
+  constructor(message = "Token inválido") {
+    super(401, message);
+  }
+}
+
+export class AccessTokenException extends HandlerHttpError {
+  constructor(message = "Token de acesso expirado") {
+    super(401, message);
+  }
+}
