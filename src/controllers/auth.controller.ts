@@ -1,19 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response, NextFunction } from "express";
-import { ConflictException } from "../utils/http.errors";
-import { ZodException } from "../utils/zod.errors";
+import { ConflictException } from "../utils/errors/http.errors";
+import { ZodException } from "../utils/errors/zod.errors";
+import { signUpSchema } from "../types/schemas/user.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
-
-const signUpSchema = z.object({
-  name: z.string().min(3).max(50),
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6).max(20),
-});
 
 export const signUp = async (
   req: Request,
@@ -23,7 +17,7 @@ export const signUp = async (
   try {
     const safeData = signUpSchema.safeParse(req.body);
     if (!safeData.success) {
-      throw new ZodException("Erro de validação nos dados", safeData.error.flatten().fieldErrors);
+      throw new ZodException("Erro de validação de dados", safeData.error.flatten().fieldErrors);
     }
     
     const { name, email, password } = safeData.data;

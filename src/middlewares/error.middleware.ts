@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { HandlerHttpError } from "../utils/http.errors";
+import { HandlerHttpError } from "../utils/errors/http.errors";
 
 export function errorMiddleware(
     error: unknown,
