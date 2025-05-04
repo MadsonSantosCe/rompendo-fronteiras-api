@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { UnauthorizedException } from "../utils/errors/http.errors";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
+import { verifyToken } from "../utils/errors/auth/http.auth";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
@@ -20,7 +21,7 @@ export const authorize = async (
 
   try {
 
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token, SECRET);
     if (!decoded?.id) {
       return next(new UnauthorizedException("Token inválido"));
     }
@@ -34,11 +35,3 @@ export const authorize = async (
     return next(error);
   }
 };
-
-export function verifyToken(token: string) {
-  try {
-    return jwt.verify(token, SECRET) as { id: string };
-  } catch (error) {
-    throw new UnauthorizedException("Token inválido");
-  }
-}

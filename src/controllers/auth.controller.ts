@@ -8,7 +8,7 @@ import { ZodException } from "../utils/errors/zod.errors";
 import { signIpSchema, signUpSchema } from "../types/schemas/user.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { User } from "@prisma/client";
+import { verifyToken } from "../utils/errors/auth/http.auth";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
@@ -33,11 +33,17 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.user.create({
       data: { name, email, password: hashedPassword },
+    }); 
+    
+    const accessToken = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET, {
+      expiresIn: "15m",
     });
 
-    const tokens = generateTokens(newUser);
+    const refreshToken = jwt.sign({ id: newUser.id, email: newUser.email }, REFRESH_SECRET, {
+      expiresIn: "7d",
+    });
 
-    res.cookie("refreshToken", tokens.refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: isProduction, 
       sameSite: isProduction ? "none" : "lax", 
@@ -46,7 +52,7 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
 
     res.status(201).json({
       message: "Usuário criado com sucesso",
-      token: tokens.accessToken,
+      token: accessToken,
       user: { id: newUser.id, name: newUser.name, email: newUser.email },
     });
   } catch (error) {
@@ -70,9 +76,15 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
       throw new ConflictException("Email ou senha inválidos");
     }
 
-    const tokens = generateTokens(user);
+    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
+      expiresIn: "15m",
+    });
 
-    res.cookie("refreshToken", tokens.refreshToken, {
+    const refreshToken = jwt.sign({ id: user.id, email: user.email }, REFRESH_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: isProduction, 
       sameSite: isProduction ? "none" : "lax", 
@@ -81,7 +93,7 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
 
     res.status(200).json({
       message: "Usuário autenticado com sucesso",
-      token: tokens.accessToken,
+      token: accessToken,
       user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (error) {
@@ -106,7 +118,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
       return next(new UnauthorizedException("Token inválido"));
     }
 
-    const decoded = verifyToken(refreshToken);
+    const decoded = verifyToken(refreshToken, REFRESH_SECRET);
     if (!decoded?.id) {
       return next(new UnauthorizedException("Token inválido"));
     }
@@ -116,17 +128,12 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
       return next(new UnauthorizedException("Usuário não encontrado"));
     }
 
-    const tokens = generateTokens(user);
-
-    res.cookie("refreshToken", tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction, 
-      sameSite: isProduction ? "none" : "lax", 
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
+      expiresIn: "15m",
     });
 
     res.status(200).json({
-      token: tokens.accessToken,
+      token: accessToken,
       user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (error) {
@@ -134,20 +141,3 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-function generateTokens(user: User) {
-  const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
-    expiresIn: "15m",
-  });
-  const refreshToken = jwt.sign({ id: user.id, email: user.email }, REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
-  return { accessToken, refreshToken };
-}
-
-function verifyToken(token: string): { id: string } | null {
-  try {
-    return jwt.verify(token, REFRESH_SECRET) as { id: string };
-  } catch {
-    return null;
-  }
-}
