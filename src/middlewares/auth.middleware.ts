@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { UnauthorizedException } from "../utils/errors/http.errors";
 import { PrismaClient } from "@prisma/client";
-import jwt from "jsonwebtoken";
 import { verifyToken } from "../utils/errors/auth/http.auth";
 
 const prisma = new PrismaClient();
