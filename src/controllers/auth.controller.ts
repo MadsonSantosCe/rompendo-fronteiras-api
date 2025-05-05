@@ -36,7 +36,7 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
     }); 
     
     const accessToken = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET, {
-      expiresIn: "15m",
+      expiresIn: "12h",
     });
 
     const refreshToken = jwt.sign({ id: newUser.id, email: newUser.email }, REFRESH_SECRET, {
@@ -77,7 +77,7 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
     }
 
     const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
-      expiresIn: "15m",
+      expiresIn: "12h",
     });
 
     const refreshToken = jwt.sign({ id: user.id, email: user.email }, REFRESH_SECRET, {
