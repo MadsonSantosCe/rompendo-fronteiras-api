@@ -28,7 +28,7 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
     const { name, email, password } = safeData.data;
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
-    if (existingUser) throw new ConflictException("Email já está em uso");
+    if (existingUser) throw new ConflictException("O e-mail já está em uso");
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.user.create({
@@ -73,7 +73,7 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
     const { email, password } = safeData.data;
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new ConflictException("Email ou senha inválidos");
+      throw new ConflictException("E-mail ou senha inválidos");
     }
 
     const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
