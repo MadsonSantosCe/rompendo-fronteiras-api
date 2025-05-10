@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response, NextFunction } from "express";
 import {
+  BadRequestException,
   ConflictException,
   UnauthorizedException,
 } from "../utils/errors/http.errors";
@@ -13,9 +14,13 @@ import { verifyToken } from "../utils/errors/auth/http.auth";
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "secret";
-const isProduction = process.env.NODE_ENV === "production";;
+const isProduction = process.env.NODE_ENV === "production";
 
-export const signUp = async (req: Request, res: Response, next: NextFunction) => {
+export const signUp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const safeData = signUpSchema.safeParse(req.body);
     if (!safeData.success) {
@@ -33,20 +38,43 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.user.create({
       data: { name, email, password: hashedPassword },
-    }); 
-    
-    const accessToken = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET, {
-      expiresIn: "12h",
     });
 
-    const refreshToken = jwt.sign({ id: newUser.id, email: newUser.email }, REFRESH_SECRET, {
-      expiresIn: "7d",
+    const verification_code = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+    console.log("Código de verificação", verification_code);
+    //envia-email de verificação
+
+    const otpRecord = await prisma.otp.create({
+      data: {
+        code: verification_code,
+        type: "EMAIL_VERIFICATION",
+        userId: newUser.id,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), //24 horas
+      },
     });
+
+    const accessToken = jwt.sign(
+      { id: newUser.id, email: newUser.email },
+      SECRET,
+      {
+        expiresIn: "12h",
+      }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: newUser.id, email: newUser.email },
+      REFRESH_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: isProduction, 
-      sameSite: isProduction ? "none" : "lax", 
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     });
 
@@ -60,7 +88,11 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const signIn = async (req: Request, res: Response, next: NextFunction) => {
+export const signIn = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const safeData = signIpSchema.safeParse(req.body);
     if (!safeData.success) {
@@ -80,14 +112,18 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
       expiresIn: "12h",
     });
 
-    const refreshToken = jwt.sign({ id: user.id, email: user.email }, REFRESH_SECRET, {
-      expiresIn: "7d",
-    });
+    const refreshToken = jwt.sign(
+      { id: user.id, email: user.email },
+      REFRESH_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: isProduction, 
-      sameSite: isProduction ? "none" : "lax", 
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     });
 
@@ -101,7 +137,11 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const signOut = async (_req: Request, res: Response, next: NextFunction) => {
+export const signOut = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     res.clearCookie("refreshToken");
     res.status(200).json({ message: "Logout realizado com sucesso" });
@@ -110,7 +150,11 @@ export const signOut = async (_req: Request, res: Response, next: NextFunction) 
   }
 };
 
-export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { refreshToken } = req.cookies;
 
@@ -141,3 +185,63 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { code } = req.body;
+  try {
+    const otpRecord = await prisma.otp.findFirst({
+      where: {
+        code: code,
+        type: "EMAIL_VERIFICATION",
+        deletionAt: null,
+        expiresAt: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    if (!otpRecord) {
+      return next(new BadRequestException("Código inválido ou expirado"));
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: otpRecord.userId,
+      },
+    });
+
+    if (!user) {
+      throw next(new BadRequestException("Usuário não encontrado"));
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        verified: true,
+      },
+    });
+    
+    await prisma.otp.update({
+      where: {
+        id: otpRecord.id,
+      },
+      data: {
+        deletionAt: new Date(), 
+      },
+    });
+
+    //envia e-mail
+
+    res.status(200).json({
+      message: "E-mail verificado com sucesso",
+      user: { id: updatedUser.id, name: updatedUser.name, email: updatedUser.email },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};

@@ -7,11 +7,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  password    String
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  otps Otp[]
+
+  @@map("user")
+}
+
+model Otp {
+  id          String     @id @default(uuid())
+  code        String
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        OtpType 
+  expiresAt   DateTime
+  createdAt   DateTime   @default(now())
+  deletionAt  DateTime?   
+
+  @@map("user_otp")
+  @@index([userId, type, code])
+  @@index([userId])
 }
