@@ -47,41 +47,8 @@ export const signUp = async (
     //enviar e-mail de verificação, mas por enquanto exibe no console    
     console.log("Código de verificação", verification_code);
 
-    const otpRecord = await prisma.otp.create({
-      data: {
-        code: verification_code,
-        type: "EMAIL_VERIFICATION",
-        userId: newUser.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), //24 horas
-      },
-    });
-
-    const accessToken = jwt.sign(
-      { id: newUser.id, email: newUser.email },
-      SECRET,
-      {
-        expiresIn: "12h",
-      }
-    );
-
-    const refreshToken = jwt.sign(
-      { id: newUser.id, email: newUser.email },
-      REFRESH_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
-    });
-
     res.status(201).json({
       message: "Usuário criado com sucesso",
-      token: accessToken,
       user: { id: newUser.id, name: newUser.name, email: newUser.email },
     });
   } catch (error) {
@@ -110,7 +77,7 @@ export const signIn = async (
     }
 
     if(!user.verified){
-      throw new ConflictException("E-mail não verificado");
+      throw new BadRequestException("E-mail não verificado");
     }
 
     const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
@@ -240,10 +207,30 @@ export const verifyEmail = async (
       },
     });
 
+    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
+      expiresIn: "12h",
+    });
+
+    const refreshToken = jwt.sign(
+      { id: user.id, email: user.email },
+      REFRESH_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+    });
+
     //enviar e-mail de confirmação
 
     res.status(200).json({
-      message: "E-mail verificado com sucesso",
+      message: "E-mail verificado com sucesso",      
+      token: accessToken,
       user: { id: updatedUser.id, name: updatedUser.name, email: updatedUser.email },
     });
   } catch (error) {
