@@ -43,8 +43,9 @@ export const signUp = async (
     const verification_code = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
+
+    //enviar e-mail de verificação, mas por enquanto exibe no console    
     console.log("Código de verificação", verification_code);
-    //envia-email de verificação
 
     const otpRecord = await prisma.otp.create({
       data: {
@@ -108,6 +109,10 @@ export const signIn = async (
       throw new ConflictException("E-mail ou senha inválidos");
     }
 
+    if(!user.verified){
+      throw new ConflictException("E-mail não verificado");
+    }
+
     const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
       expiresIn: "12h",
     });
@@ -159,17 +164,17 @@ export const refreshToken = async (
     const { refreshToken } = req.cookies;
 
     if (!refreshToken) {
-      return next(new UnauthorizedException("Token inválido"));
+      throw new UnauthorizedException("Token inválido");
     }
 
     const decoded = verifyToken(refreshToken, REFRESH_SECRET);
     if (!decoded?.id) {
-      return next(new UnauthorizedException("Token inválido"));
+      throw new UnauthorizedException("Token inválido");
     }
 
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
     if (!user) {
-      return next(new UnauthorizedException("Usuário não encontrado"));
+      throw new UnauthorizedException("Usuário não encontrado");
     }
 
     const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
@@ -204,7 +209,7 @@ export const verifyEmail = async (
     });
 
     if (!otpRecord) {
-      return next(new BadRequestException("Código inválido ou expirado"));
+      throw new BadRequestException("Código inválido ou expirado");
     }
 
     const user = await prisma.user.findUnique({
@@ -214,7 +219,7 @@ export const verifyEmail = async (
     });
 
     if (!user) {
-      throw next(new BadRequestException("Usuário não encontrado"));
+      throw new BadRequestException("Usuário não encontrado");
     }
 
     const updatedUser = await prisma.user.update({
@@ -235,7 +240,7 @@ export const verifyEmail = async (
       },
     });
 
-    //envia e-mail
+    //enviar e-mail de confirmação
 
     res.status(200).json({
       message: "E-mail verificado com sucesso",
