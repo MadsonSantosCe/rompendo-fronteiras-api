@@ -49,7 +49,7 @@ export const signUp = async (
 
     res.status(201).json({
       message: "Usuário criado com sucesso",
-      user: { id: newUser.id, name: newUser.name, email: newUser.email },
+      user: { id: newUser.id, name: newUser.name, email: newUser.email, verified: newUser.verified },
     });
   } catch (error) {
     return next(error);
@@ -80,12 +80,12 @@ export const signIn = async (
       throw new BadRequestException("E-mail não verificado");
     }
 
-    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
+    const accessToken = jwt.sign({ id: user.id }, SECRET, {
       expiresIn: "12h",
     });
 
     const refreshToken = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id },
       REFRESH_SECRET,
       {
         expiresIn: "7d",
@@ -102,7 +102,7 @@ export const signIn = async (
     res.status(200).json({
       message: "Usuário autenticado com sucesso",
       token: accessToken,
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, verified: user.verified },
     });
   } catch (error) {
     return next(error);
@@ -144,13 +144,13 @@ export const refreshToken = async (
       throw new UnauthorizedException("Usuário não encontrado");
     }
 
-    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
+    const accessToken = jwt.sign({ id: user.id }, SECRET, {
       expiresIn: "15m",
     });
 
     res.status(200).json({
       token: accessToken,
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, verified: user.verified },
     });
   } catch (error) {
     return next(error);
@@ -207,12 +207,12 @@ export const verifyEmail = async (
       },
     });
 
-    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET, {
+    const accessToken = jwt.sign({ id: user.id }, SECRET, {
       expiresIn: "12h",
     });
 
     const refreshToken = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id },
       REFRESH_SECRET,
       {
         expiresIn: "7d",
@@ -231,7 +231,7 @@ export const verifyEmail = async (
     res.status(200).json({
       message: "E-mail verificado com sucesso",      
       token: accessToken,
-      user: { id: updatedUser.id, name: updatedUser.name, email: updatedUser.email },
+      user: { id: updatedUser.id, name: updatedUser.name, email: updatedUser.email, verified: updatedUser.verified },
     });
   } catch (error) {
     return next(error);
