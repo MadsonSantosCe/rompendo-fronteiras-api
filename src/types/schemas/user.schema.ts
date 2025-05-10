@@ -10,7 +10,7 @@ export const signUpSchema = z.object({
   .max(20, {message: "A senha deve ter no máximo 20 caracteres"}),
 });
 
-export const signIpSchema = z.object({  
+export const signInSchema = z.object({  
   email: z.string().email("Email inválido"),
   password: z.string()
   .min(6, {message: "A senha deve ter no mínimo 6 caracteres"})
