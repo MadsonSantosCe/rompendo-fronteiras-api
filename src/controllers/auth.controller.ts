@@ -10,6 +10,7 @@ import { signInSchema, signUpSchema } from "../types/schemas/user.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "../utils/errors/auth/http.auth";
+import { customAlphabet  } from "nanoid";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
@@ -40,9 +41,9 @@ export const signUp = async (
       data: { name, email, password: hashedPassword },
     });
 
-    const verification_code = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
+    const alphanumeric = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const generateVerificationCode = customAlphabet(alphanumeric, 6);
+    const verification_code = generateVerificationCode();
 
     await prisma.otp.create({
       data: {
@@ -53,8 +54,7 @@ export const signUp = async (
       },
     });
 
-    //enviar e-mail de verificação, mas por enquanto exibe no console
-    console.log("Código de verificação", verification_code);
+    //enviar e-mail de verificação
 
     res.status(201).json({
       message: "Usuário criado com sucesso",
