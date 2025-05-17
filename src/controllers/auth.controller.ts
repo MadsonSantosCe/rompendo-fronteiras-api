@@ -247,7 +247,7 @@ export const signOut = async (
   }
 };
 
-export const validateSession = async (
+export const verifyAcsessToken = async (
   req: Request,
   res: Response,
   next: NextFunction
