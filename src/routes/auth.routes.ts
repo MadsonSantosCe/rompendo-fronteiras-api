@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { refreshToken, signIn, signOut, signUp, verifyEmail } from '../controllers/auth.controller';
+import { refreshToken, signIn, signOut, signUp, validateSession, verifyEmail } from '../controllers/auth.controller';
 
 const authRouter = Router();
 
@@ -8,5 +8,6 @@ authRouter.post('/sign-in', signIn);
 authRouter.post("/sign-out", signOut);
 authRouter.post('/refresh-token', refreshToken);
 authRouter.post('/verify-email', verifyEmail);
+authRouter.post('/validate-session', validateSession);
 
 export default authRouter;

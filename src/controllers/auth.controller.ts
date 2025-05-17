@@ -10,7 +10,7 @@ import { signInSchema, signUpSchema } from "../types/schemas/user.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "../utils/errors/auth/http.auth";
-import { customAlphabet  } from "nanoid";
+import { customAlphabet } from "nanoid";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
@@ -41,9 +41,9 @@ export const signUp = async (
       data: { name, email, password: hashedPassword },
     });
 
-    const alphanumeric = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const generateVerificationCode = customAlphabet(alphanumeric, 6);
-    const verification_code = generateVerificationCode();
+    const verification_code = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
     await prisma.otp.create({
       data: {
@@ -153,7 +153,7 @@ export const verifyEmail = async (
 
     res.status(200).json({
       message: "E-mail verificado com sucesso",
-      token: accessToken,
+      accessToken: accessToken,
       user: {
         id: updatedUser.id,
         name: updatedUser.name,
@@ -221,7 +221,7 @@ export const signIn = async (
 
     res.status(200).json({
       message: "Usuário autenticado com sucesso",
-      token: accessToken,
+      accessToken: accessToken,
       user: {
         id: user.id,
         name: user.name,
@@ -239,9 +239,52 @@ export const signOut = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
+  try {    
     res.clearCookie("refreshToken");
     res.status(200).json({ message: "Logout realizado com sucesso" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const validateSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    throw new UnauthorizedException("Token inválido");
+  }
+
+  if (!authHeader.startsWith("Bearer ")) {
+    throw new UnauthorizedException("Token inválido");
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = verifyToken(token, SECRET);
+    if (!decoded?.id) {
+      throw new UnauthorizedException("Token inválido");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException("Usuário não encontrado");
+    }
+
+    res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        verified: user.verified,
+      },
+    });
   } catch (error) {
     return next(error);
   }
@@ -256,16 +299,19 @@ export const refreshToken = async (
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
+      res.clearCookie("refreshToken");
       throw new UnauthorizedException("Token inválido");
     }
 
     const decoded = verifyToken(refreshToken, REFRESH_SECRET);
     if (!decoded?.id) {
+      res.clearCookie("refreshToken");
       throw new UnauthorizedException("Token inválido");
     }
 
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
     if (!user) {
+      res.clearCookie("refreshToken");
       throw new UnauthorizedException("Usuário não encontrado");
     }
 
@@ -281,13 +327,13 @@ export const refreshToken = async (
     );
 
     res.status(200).json({
-      token: accessToken,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         verified: user.verified,
       },
+      accessToken: accessToken
     });
   } catch (error) {
     return next(error);
