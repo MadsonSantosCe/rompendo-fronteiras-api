@@ -9,12 +9,14 @@ import { ZodException } from "../utils/errors/zod.errors";
 import { signInSchema, signUpSchema } from "../types/schemas/user.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { verifyToken } from "../utils/errors/auth/http.auth";
+import { verifyToken } from "../utils/auth/http.auth";
 import { customAlphabet } from "nanoid";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "secret";
+const EXPIRESIN_TOKEN = process.env.EXPIRESIN_TOKEN || "1m";
+const EXPIRESIN_REFRESH_TOKEN = process.env.EXPIRESIN_REFRESH_TOKEN || "1d";
 const isProduction = process.env.NODE_ENV === "production";
 
 export const signUp = async (
@@ -129,7 +131,7 @@ export const verifyEmail = async (
       },
       SECRET,
       {
-        expiresIn: "12h",
+        expiresIn: "1m",
       }
     );
 
@@ -140,7 +142,7 @@ export const verifyEmail = async (
       },
       REFRESH_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: "2m",
       }
     );
 
@@ -197,7 +199,7 @@ export const signIn = async (
       },
       SECRET,
       {
-        expiresIn: "12h",
+        expiresIn: "1m",
       }
     );
 
@@ -208,7 +210,7 @@ export const signIn = async (
       },
       REFRESH_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: "2m",
       }
     );
 
@@ -239,7 +241,7 @@ export const signOut = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {    
+  try {
     res.clearCookie("refreshToken");
     res.status(200).json({ message: "Logout realizado com sucesso" });
   } catch (error) {
@@ -247,35 +249,15 @@ export const signOut = async (
   }
 };
 
-export const verifyAcsessToken = async (
+export const getProfile = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    throw new UnauthorizedException("Token inválido");
-  }
-
-  if (!authHeader.startsWith("Bearer ")) {
-    throw new UnauthorizedException("Token inválido");
-  }
-
-  const token = authHeader.split(" ")[1];
-
   try {
-    const decoded = verifyToken(token, SECRET);
-    if (!decoded?.id) {
-      throw new UnauthorizedException("Token inválido");
-    }
+    const user = req.user;
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException("Usuário não encontrado");
-    }
+    if (!user) throw new UnauthorizedException("Usuário não encontrado");
 
     res.status(200).json({
       user: {
@@ -322,7 +304,7 @@ export const refreshToken = async (
       },
       SECRET,
       {
-        expiresIn: "12h",
+        expiresIn: "1m",
       }
     );
 
@@ -333,7 +315,7 @@ export const refreshToken = async (
         email: user.email,
         verified: user.verified,
       },
-      accessToken: accessToken
+      accessToken: accessToken,
     });
   } catch (error) {
     return next(error);

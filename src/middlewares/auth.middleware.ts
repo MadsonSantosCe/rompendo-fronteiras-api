@@ -1,10 +1,18 @@
 import { Request, Response, NextFunction } from "express";
 import { UnauthorizedException } from "../utils/errors/http.errors";
-import { PrismaClient } from "@prisma/client";
-import { verifyToken } from "../utils/errors/auth/http.auth";
+import { PrismaClient, User } from "@prisma/client";
+import { verifyToken } from "../utils/auth/http.auth";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User | null;
+    }
+  }
+}
 
 export const authorize = async (
   req: Request,
@@ -19,7 +27,6 @@ export const authorize = async (
   const token = authHeader.split(" ")[1];
 
   try {
-
     const decoded = verifyToken(token, SECRET);
     if (!decoded?.id) {
       throw new UnauthorizedException("Token inválido");
@@ -28,6 +35,8 @@ export const authorize = async (
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
     });
+
+    req.user = user;
 
     next();
   } catch (error) {
