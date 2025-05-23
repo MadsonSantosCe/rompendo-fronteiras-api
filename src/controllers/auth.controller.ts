@@ -15,8 +15,8 @@ import { customAlphabet } from "nanoid";
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "secret";
-const EXPIRESIN_TOKEN = process.env.EXPIRESIN_TOKEN || "1m";
-const EXPIRESIN_REFRESH_TOKEN = process.env.EXPIRESIN_REFRESH_TOKEN || "1d";
+const EXPIRES_IN_TOKEN = process.env.EXPIRESIN_TOKEN || "1m";
+const EXPIRES_IN_REFRESH_TOKEN = process.env.EXPIRESIN_REFRESH_TOKEN || "1d";
 const isProduction = process.env.NODE_ENV === "production";
 
 export const signUp = async (
@@ -127,22 +127,20 @@ export const verifyEmail = async (
     const accessToken = jwt.sign(
       {
         id: user.id,
-        name: user.name,
       },
       SECRET,
       {
-        expiresIn: "1m",
+        expiresIn: "12h",
       }
     );
 
     const refreshToken = jwt.sign(
       {
         id: user.id,
-        name: user.name,
       },
       REFRESH_SECRET,
       {
-        expiresIn: "2m",
+        expiresIn: "7d",
       }
     );
 
@@ -195,22 +193,20 @@ export const signIn = async (
     const accessToken = jwt.sign(
       {
         id: user.id,
-        name: user.name,
       },
       SECRET,
       {
-        expiresIn: "1m",
+        expiresIn: "12h",
       }
     );
 
     const refreshToken = jwt.sign(
       {
         id: user.id,
-        name: user.name,
       },
       REFRESH_SECRET,
       {
-        expiresIn: "2m",
+        expiresIn: "7d",
       }
     );
 
@@ -249,7 +245,7 @@ export const signOut = async (
   }
 };
 
-export const getProfile = async (
+export const userInfo = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -260,6 +256,7 @@ export const getProfile = async (
     if (!user) throw new UnauthorizedException("Usuário não encontrado");
 
     res.status(200).json({
+      message: "Usuário autenticado com sucesso",
       user: {
         id: user.id,
         name: user.name,
@@ -300,21 +297,15 @@ export const refreshToken = async (
     const accessToken = jwt.sign(
       {
         id: user.id,
-        name: user.name,
       },
       SECRET,
       {
-        expiresIn: "1m",
+        expiresIn: "12h",
       }
     );
 
     res.status(200).json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        verified: user.verified,
-      },
+      message: "Token atualizado com sucesso",
       accessToken: accessToken,
     });
   } catch (error) {
