@@ -5,7 +5,7 @@
   "description": "Projeto Rompendo Fronteiras: plataforma para a Igreja Missionária Evangélica Rompendo Fronteiras, com front-end em React e API em Node.js. Facilita a gestão de eventos, comunicação e serviços da igreja, proporcionando uma experiência moderna e acessível para a comunidade.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "set NODE_ENV=test& jest --runInBand",
     "dev": "node --import=tsx --watch ./src/server.ts"
   },
   "repository": {
@@ -23,9 +23,12 @@
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
+    "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.15.2",
+    "jest": "^29.7.0",
     "prisma": "^6.6.0",
+    "ts-jest": "^29.3.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
