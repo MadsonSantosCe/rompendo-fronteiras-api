@@ -11,6 +11,8 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "../utils/auth/http.auth";
 import { customAlphabet } from "nanoid";
+import { send } from "process";
+import { sendVerificationEmail } from "../services/email.service";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
@@ -24,48 +26,62 @@ export const signUp = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    const safeData = signUpSchema.safeParse(req.body);
-    if (!safeData.success) {
-      throw new ZodException(
+  const safeData = signUpSchema.safeParse(req.body);
+  if (!safeData.success) {
+    return next(
+      new ZodException(
         "Erro de validação de dados",
         safeData.error.flatten().fieldErrors
+      )
+    );
+  }
+
+  const { name, email, password } = safeData.data;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existingUser = await tx.user.findUnique({ where: { email } });
+      if (existingUser) {
+        throw new ConflictException("O e-mail já está em uso");
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+        },
+      });
+
+      const verification_code = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
+
+      await tx.otp.create({
+        data: {
+          code: verification_code,
+          type: "EMAIL_VERIFICATION",
+          userId: newUser.id,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+
+      await sendVerificationEmail(
+        newUser.email,
+        verification_code
       );
-    }
-
-    const { name, email, password } = safeData.data;
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-
-    if (existingUser) throw new ConflictException("O e-mail já está em uso");
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
-    });
-
-    const verification_code = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
-
-    await prisma.otp.create({
-      data: {
-        code: verification_code,
-        type: "EMAIL_VERIFICATION",
-        userId: newUser.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), //24 horas
-      },
-    });
-
-    //enviar e-mail de verificação
-
-    res.status(201).json({
-      message: "Usuário criado com sucesso",
-      user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        verified: newUser.verified,
-      },
+      
+      res.status(201).json({
+        message: "Usuário criado com sucesso",
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          verified: newUser.verified,
+        },
+      });
     });
   } catch (error) {
     return next(error);

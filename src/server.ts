@@ -4,6 +4,8 @@ import authRouter from './routes/auth.routes';
 import { errorMiddleware } from './middlewares/error.middleware';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 

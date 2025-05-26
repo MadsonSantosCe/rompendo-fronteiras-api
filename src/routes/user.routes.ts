@@ -3,7 +3,7 @@ import { authorize } from '../middlewares/auth.middleware';
 
 const userRouter = Router();
 
-userRouter.get('/', authorize, (req, res) => { res.send({ title: 'GET all users' }); });
+userRouter.get('/', (req, res) => { res.send({ title: 'GET all users' }); });
 userRouter.get('/:id', (req, res) => { res.send({ title: 'GET user details' }); });
 userRouter.post('/', (req, res) => { res.send({ title: 'CREATE new user' }); });
 userRouter.put('/:id', (req, res) => { res.send({ title: 'UPDATE user' }); });
