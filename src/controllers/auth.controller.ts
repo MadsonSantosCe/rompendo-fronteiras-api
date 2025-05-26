@@ -10,15 +10,11 @@ import { signInSchema, signUpSchema } from "../types/schemas/user.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "../utils/auth/http.auth";
-import { customAlphabet } from "nanoid";
-import { send } from "process";
 import { sendVerificationEmail } from "../services/email.service";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "secret";
-const EXPIRES_IN_TOKEN = process.env.EXPIRESIN_TOKEN || "1m";
-const EXPIRES_IN_REFRESH_TOKEN = process.env.EXPIRESIN_REFRESH_TOKEN || "1d";
 const isProduction = process.env.NODE_ENV === "production";
 
 export const signUp = async (
@@ -68,11 +64,8 @@ export const signUp = async (
         },
       });
 
-      await sendVerificationEmail(
-        newUser.email,
-        verification_code
-      );
-      
+      await sendVerificationEmail(newUser.email, verification_code);
+
       res.status(201).json({
         message: "Usuário criado com sucesso",
         user: {
@@ -95,87 +88,87 @@ export const verifyEmail = async (
 ) => {
   const { code } = req.body;
   try {
-    const otpRecord = await prisma.otp.findFirst({
-      where: {
-        code: code,
-        type: "EMAIL_VERIFICATION",
-        deletionAt: null,
-        expiresAt: {
-          gte: new Date(),
+    await prisma.$transaction(async (tx) => {
+      const otpRecord = await tx.otp.findFirst({
+        where: {
+          code: code,
+          type: "EMAIL_VERIFICATION",
+          deletionAt: null,
+          expiresAt: {
+            gte: new Date(),
+          },
         },
-      },
-    });
+      });
 
-    if (!otpRecord) {
-      throw new BadRequestException("Código inválido ou expirado");
-    }
-
-    const user = await prisma.user.findUnique({
-      where: {
-        id: otpRecord.userId,
-      },
-    });
-
-    if (!user) {
-      throw new BadRequestException("Usuário não encontrado");
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        verified: true,
-      },
-    });
-
-    await prisma.otp.update({
-      where: {
-        id: otpRecord.id,
-      },
-      data: {
-        deletionAt: new Date(),
-      },
-    });
-
-    //enviar e-mail de confirmação
-
-    const accessToken = jwt.sign(
-      {
-        id: user.id,
-      },
-      SECRET,
-      {
-        expiresIn: "12h",
+      if (!otpRecord) {
+        throw new BadRequestException("Código inválido ou expirado");
       }
-    );
 
-    const refreshToken = jwt.sign(
-      {
-        id: user.id,
-      },
-      REFRESH_SECRET,
-      {
-        expiresIn: "7d",
+      const user = await tx.user.findUnique({
+        where: {
+          id: otpRecord.userId,
+        },
+      });
+
+      if (!user) {
+        throw new BadRequestException("Usuário não encontrado");
       }
-    );
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
-    });
+      const updatedUser = await tx.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          verified: true,
+        },
+      });
 
-    res.status(200).json({
-      message: "E-mail verificado com sucesso",
-      accessToken: accessToken,
-      user: {
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        verified: updatedUser.verified,
-      },
+      await tx.otp.update({
+        where: {
+          id: otpRecord.id,
+        },
+        data: {
+          deletionAt: new Date(),
+        },
+      });
+
+      const accessToken = jwt.sign(
+        {
+          id: user.id,
+        },
+        SECRET,
+        {
+          expiresIn: "12h",
+        }
+      );
+
+      const refreshToken = jwt.sign(
+        {
+          id: user.id,
+        },
+        REFRESH_SECRET,
+        {
+          expiresIn: "7d",
+        }
+      );
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.status(200).json({
+        message: "E-mail verificado com sucesso",
+        accessToken: accessToken,
+        user: {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          verified: updatedUser.verified,
+        },
+      });
     });
   } catch (error) {
     return next(error);

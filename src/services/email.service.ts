@@ -9,11 +9,11 @@ export const sendVerificationEmail = async (
 ): Promise<void> => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "sandbox.smtp.mailtrap.io",
-      port: 2525,
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
       auth: {
-        user: "26950c3ad13e03",
-        pass: "bad79b9658cb5c",
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
