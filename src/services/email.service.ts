@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import dotenv from 'dotenv';
 dotenv.config();
-import { VERIFICATION_EMAIL_TEMPLATE } from "../config/mailtrap/email.templates";
+import { VERIFICATION_EMAIL_TEMPLATE } from "../utils/mailtrap/email.templates";
 
 export const sendVerificationEmail = async (
   to: string,

@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from "../utils/errors/http.errors";
 import { ZodException } from "../utils/errors/zod.errors";
-import { signInSchema, signUpSchema } from "../types/schemas/user.schema";
+import { signInSchema, signUpSchema, verifyEmailSchema } from "../schemas/auth.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "../utils/auth/http.auth";
@@ -86,7 +86,19 @@ export const verifyEmail = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { code } = req.body;
+
+  const safeData = verifyEmailSchema.safeParse(req.body);
+  if (!safeData.success) {
+    return next(
+      new ZodException(
+        "Erro de validação de dados",
+        safeData.error.flatten().fieldErrors
+      )
+    );
+  }
+
+  const { code } = safeData.data;
+
   try {
     await prisma.$transaction(async (tx) => {
       const otpRecord = await tx.otp.findFirst({
