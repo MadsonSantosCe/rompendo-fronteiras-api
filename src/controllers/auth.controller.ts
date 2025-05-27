@@ -6,13 +6,19 @@ import {
   UnauthorizedException,
 } from "../utils/errors/http.errors";
 import { ZodException } from "../utils/errors/zod.errors";
-import { signInSchema, signUpSchema, verifyEmailSchema } from "../schemas/auth.schema";
+import {
+  signInSchema,
+  signUpSchema,
+  verifyEmailSchema,
+} from "../schemas/auth.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "../utils/auth/http.auth";
-import { sendVerificationEmail } from "../services/email.service";
+import { AuthService } from "../services/auth.service";
+import { ZodService } from "../services/zod.service";
 
 const prisma = new PrismaClient();
+const authService = new AuthService();
 const SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "secret";
 const isProduction = process.env.NODE_ENV === "production";
@@ -22,59 +28,19 @@ export const signUp = async (
   res: Response,
   next: NextFunction
 ) => {
-  const safeData = signUpSchema.safeParse(req.body);
-  if (!safeData.success) {
-    return next(
-      new ZodException(
-        "Erro de validação de dados",
-        safeData.error.flatten().fieldErrors
-      )
-    );
-  }
-
-  const { name, email, password } = safeData.data;
+  const { name, email, password } = ZodService.validate(signUpSchema, req.body);
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const existingUser = await tx.user.findUnique({ where: { email } });
-      if (existingUser) {
-        throw new ConflictException("O e-mail já está em uso");
-      }
+    const result = await authService.registerUser({ name, email, password });
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      const newUser = await tx.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-        },
-      });
-
-      const verification_code = Math.floor(
-        100000 + Math.random() * 900000
-      ).toString();
-
-      await tx.otp.create({
-        data: {
-          code: verification_code,
-          type: "EMAIL_VERIFICATION",
-          userId: newUser.id,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        },
-      });
-
-      await sendVerificationEmail(newUser.email, verification_code);
-
-      res.status(201).json({
-        message: "Usuário criado com sucesso",
-        user: {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          verified: newUser.verified,
-        },
-      });
+    res.status(201).json({
+      message: "Usuário criado com sucesso",
+      user: {
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        verified: result.user.verified,
+      },
     });
   } catch (error) {
     return next(error);
@@ -86,7 +52,6 @@ export const verifyEmail = async (
   res: Response,
   next: NextFunction
 ) => {
-
   const safeData = verifyEmailSchema.safeParse(req.body);
   if (!safeData.success) {
     return next(
