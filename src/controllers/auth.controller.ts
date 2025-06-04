@@ -360,6 +360,9 @@ export const forgotPassword = async (
           userId: user.id,
           type: "PASSWORD_RESET",
           deletionAt: null,
+          expiresAt: {
+            gte: new Date(),
+          },
         },
       });
 
