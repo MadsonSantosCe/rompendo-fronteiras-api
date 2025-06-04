@@ -11,7 +11,7 @@ authRouter.post('/verify-acsess-token', authorize, userInfo);
 authRouter.post('/refresh-token', refreshToken);
 authRouter.post('/verify-email', verifyEmail);
 authRouter.post('/forgot-password', forgotPassword);
-authRouter.post('/reset-password/:code', resetPassword);
+authRouter.post('/reset-password/:token', resetPassword);
 
 
 export default authRouter;

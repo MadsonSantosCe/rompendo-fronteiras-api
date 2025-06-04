@@ -399,13 +399,13 @@ export const resetPassword = async (
   next: NextFunction
 ) => {
   try {
-    const { code } = req.params;
+    const { token } = req.params;
     const { password } = req.body;
 
     await prisma.$transaction(async (tx) => {
       const otpRecord = await tx.otp.findFirst({
         where: {
-          code:  code,
+          code:  token,
           type: "PASSWORD_RESET",
           deletionAt: null,
           expiresAt: {
