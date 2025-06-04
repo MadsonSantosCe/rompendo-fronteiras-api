@@ -6,11 +6,19 @@ import {
   UnauthorizedException,
 } from "../utils/errors/http.errors";
 import { ZodException } from "../utils/errors/zod.errors";
-import { signInSchema, signUpSchema, verifyEmailSchema } from "../schemas/auth.schema";
+import {
+  signInSchema,
+  signUpSchema,
+  verifyEmailSchema,
+} from "../schemas/auth.schema";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "../utils/auth/http.auth";
-import { sendVerificationEmail } from "../services/email.service";
+import {
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "../services/email.service";
+import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";
@@ -86,7 +94,6 @@ export const verifyEmail = async (
   res: Response,
   next: NextFunction
 ) => {
-
   const safeData = verifyEmailSchema.safeParse(req.body);
   if (!safeData.success) {
     return next(
@@ -329,6 +336,113 @@ export const refreshToken = async (
       message: "Token atualizado com sucesso",
       accessToken: accessToken,
     });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { email } = req.body;
+  try {
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({ where: { email } });
+
+      if (!user) {
+        throw new BadRequestException("Email não encontrado");
+      }
+
+      const existingOtp = await tx.otp.findFirst({
+        where: {
+          userId: user.id,
+          type: "PASSWORD_RESET",
+          deletionAt: null,
+        },
+      });
+
+      if (existingOtp) {
+        throw new BadRequestException("Já existe uma solicitação de redefinição de senha em andamento");
+      }
+
+      const reset_code = uuidv4();
+      const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
+
+      const otp = await tx.otp.create({
+        data: {
+          code: reset_code,
+          type: "PASSWORD_RESET",
+          userId: user.id,
+          expiresAt: new Date(resetTokenExpiresAt),
+        },
+      });
+
+      await sendPasswordResetEmail(
+        user.email,
+        `${process.env.CLIENT_URL}/reset-password/${reset_code}`
+      );
+    });
+
+    res.status(200).json({
+      message: "e-mail de redefinição de senha enviado com sucesso",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { code } = req.params;
+    const { password } = req.body;
+
+    await prisma.$transaction(async (tx) => {
+      const otpRecord = await tx.otp.findFirst({
+        where: {
+          code:  code,
+          type: "PASSWORD_RESET",
+          deletionAt: null,
+          expiresAt: {
+            gte: new Date(),
+          },
+        },
+      });
+
+      if (!otpRecord) {
+        throw new BadRequestException("Código de redefinição de senha inválido ou expirado");
+      }
+
+      const user = await tx.user.findUnique({
+        where: {
+          id: otpRecord.userId,
+        },
+      });
+
+      if (!user) {
+        throw new BadRequestException("Usuário não encontrado");
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+
+      await tx.otp.update({
+        where: { id: otpRecord.id },
+        data: { deletionAt: new Date() },
+      });
+
+    });
+
+    res.status(200).json({ message: "Senha redefinida com sucesso" });
   } catch (error) {
     return next(error);
   }
