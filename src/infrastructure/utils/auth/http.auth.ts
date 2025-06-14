@@ -11,6 +11,7 @@ export function verifyToken(
     if (error instanceof Error && error.name === "TokenExpiredError") {
       throw new UnauthorizedException("Token expirado");
     }
+
     throw new UnauthorizedException("Token inválido");
   }
 }

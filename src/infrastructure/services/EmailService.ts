@@ -1,12 +1,17 @@
 import { IEmailService } from "../../domain/services/IEmailService";
 import nodemailer from "nodemailer";
-import { PASSWORD_RESET_REQUEST_TEMPLATE, VERIFICATION_EMAIL_TEMPLATE } from "../utils/mailtrap/email.templates";
+
+import {
+  PASSWORD_RESET_REQUEST_TEMPLATE,
+  VERIFICATION_EMAIL_TEMPLATE,
+} from "../utils/mailtrap/email.templates";
 
 export class EmailService implements IEmailService {
   sendVerificationEmail = async (
     to: string,
     verifyCode: string
   ): Promise<void> => {
+    
     try {
       const transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST,

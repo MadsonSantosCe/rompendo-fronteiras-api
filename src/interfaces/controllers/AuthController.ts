@@ -18,28 +18,46 @@ import {
 
 import { verifyToken } from "../../infrastructure/utils/auth/http.auth";
 import { ZodException } from "../../infrastructure/utils/errors/zod.errors";
-import { BadRequestException, UnauthorizedException } from "../../infrastructure/utils/errors/http.errors";
+
+import {
+  BadRequestException,
+  UnauthorizedException,
+} from "../../infrastructure/utils/errors/http.errors";
 
 const userRepository = new PrismaUserRepository();
 const otpRepository = new PrismaOtpRepository();
 const emailService = new EmailService();
 
-const signUpUseCase = new SignUpUseCase(userRepository, otpRepository, emailService);
+const signUpUseCase = new SignUpUseCase(
+  userRepository,
+  otpRepository,
+  emailService
+);
 const signInUseCase = new SignInUseCase(userRepository);
-const verifyEmailUseCase = new VerifyEmailUseCase(otpRepository, userRepository);
+const verifyEmailUseCase = new VerifyEmailUseCase(
+  otpRepository,
+  userRepository
+);
 const refreshTokenUseCase = new RefreshTokenUseCase(userRepository);
-const forgotPasswordUseCase = new ForgotPasswordUseCase(userRepository, otpRepository, emailService);
-const resetPasswordUseCase = new ResetPasswordUseCase(otpRepository, userRepository);
+const forgotPasswordUseCase = new ForgotPasswordUseCase(
+  userRepository,
+  otpRepository,
+  emailService
+);
+const resetPasswordUseCase = new ResetPasswordUseCase(
+  otpRepository,
+  userRepository
+);
 
 class AuthController {
-
+  
   private handleValidation(schema: any, req: Request) {
     const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {      
+    if (!parsed.success) {
       throw new ZodException(
         "Erro de validação de dados",
         parsed.error.flatten().fieldErrors
-    );
+      );
     }
     return parsed.data;
   }
@@ -62,7 +80,9 @@ class AuthController {
 
     try {
       const user = await signInUseCase.execute(data);
-      res.status(200).json({ message: "Usuário autenticado com sucesso", user });
+      res
+        .status(200)
+        .json({ message: "Usuário autenticado com sucesso", user });
     } catch (error) {
       next(error);
     }
@@ -93,7 +113,7 @@ class AuthController {
       );
 
       if (!decoded?.id) {
-        throw new UnauthorizedException("Token inválido" );
+        throw new UnauthorizedException("Token inválido");
       }
 
       const user = await refreshTokenUseCase.execute(decoded.id);
@@ -112,7 +132,9 @@ class AuthController {
 
     try {
       await forgotPasswordUseCase.execute(email, process.env.CLIENT_URL || "");
-      res.status(200).json({ message: "E-mail de redefinição enviado com sucesso" });
+      res
+        .status(200)
+        .json({ message: "E-mail de redefinição enviado com sucesso" });
     } catch (error) {
       next(error);
     }
@@ -123,7 +145,7 @@ class AuthController {
     const { password } = req.body;
 
     if (!password) {
-      throw new BadRequestException("Senha é obrigatória" );
+      throw new BadRequestException("Senha é obrigatória");
     }
 
     try {

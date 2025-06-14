@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 
 export class PrismaOtpRepository implements IOtpRepository {
   async findValidOtp(code: string, type: OtpType): Promise<Otp | null> {
+
     const otp = await prisma.otp.findFirst({
       where: {
         code,
@@ -14,7 +15,9 @@ export class PrismaOtpRepository implements IOtpRepository {
         expiresAt: { gte: new Date() },
       },
     });
+
     if (!otp) return null;
+
     return new Otp(
       otp.id,
       otp.code,
@@ -31,6 +34,7 @@ export class PrismaOtpRepository implements IOtpRepository {
     userId: string;
     expiresAt: Date;
   }): Promise<Otp> {
+
     const newOtp = await prisma.otp.create({
       data: {
         code: otp.code,
@@ -39,6 +43,7 @@ export class PrismaOtpRepository implements IOtpRepository {
         expiresAt: otp.expiresAt,
       },
     });
+
     return new Otp(
       newOtp.id,
       newOtp.code,
@@ -57,6 +62,7 @@ export class PrismaOtpRepository implements IOtpRepository {
   }
 
   async findValidOtpByUser(userId: string, type: OtpType): Promise<Otp | null> {
+
     const otp = await prisma.otp.findFirst({
       where: {
         userId,
@@ -65,7 +71,9 @@ export class PrismaOtpRepository implements IOtpRepository {
         expiresAt: { gte: new Date() },
       },
     });
+
     if (!otp) return null;
+    
     return new Otp(
       otp.id,
       otp.code,

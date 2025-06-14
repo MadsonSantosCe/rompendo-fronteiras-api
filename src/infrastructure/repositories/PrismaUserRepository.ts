@@ -5,9 +5,12 @@ import { User } from "../../domain/entities/User";
 const prisma = new PrismaClient();
 
 export class PrismaUserRepository implements IUserRepository {
+
   async findByEmail(email: string): Promise<User | null> {
     const user = await prisma.user.findUnique({ where: { email } });
+
     if (!user) return null;
+
     return new User(
       user.id,
       user.name,
@@ -19,7 +22,9 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findById(id: string): Promise<User | null> {
     const user = await prisma.user.findUnique({ where: { id } });
+
     if (!user) return null;
+
     return new User(
       user.id,
       user.name,
@@ -34,6 +39,7 @@ export class PrismaUserRepository implements IUserRepository {
     email: string;
     password: string;
   }): Promise<User> {
+
     const newUser = await prisma.user.create({
       data: {
         name: user.name,
@@ -41,6 +47,7 @@ export class PrismaUserRepository implements IUserRepository {
         password: user.password,
       },
     });
+
     return new User(
       newUser.id,
       newUser.name,
@@ -55,6 +62,7 @@ export class PrismaUserRepository implements IUserRepository {
       where: { id },
       data: { verified },
     });
+    
     return new User(
       updated.id,
       updated.name,
