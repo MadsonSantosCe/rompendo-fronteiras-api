@@ -76,7 +76,6 @@ class AuthController {
 
   signIn = async (req: Request, res: Response, next: NextFunction) => {
     const data = this.handleValidation(signInSchema, req);
-    if (!data) return next();
 
     try {
       const user = await signInUseCase.execute(data);
@@ -90,7 +89,6 @@ class AuthController {
 
   verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
     const data = this.handleValidation(verifyEmailSchema, req);
-    if (!data) return next();
 
     try {
       const user = await verifyEmailUseCase.execute(data.code);
