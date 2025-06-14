@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { UnauthorizedException } from "../utils/errors/http.errors";
+import { UnauthorizedException } from "../../infrastructure/utils/errors/http.errors";
 import { PrismaClient, User } from "@prisma/client";
-import { verifyToken } from "../utils/auth/http.auth";
+import { verifyToken } from "../../infrastructure/utils/auth/http.auth";
 
 const prisma = new PrismaClient();
 const SECRET = process.env.JWT_SECRET || "secret";

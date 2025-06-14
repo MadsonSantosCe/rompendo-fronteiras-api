@@ -1,10 +1,10 @@
-import express from 'express';
-import userRouter from './routes/user.routes';
-import authRouter from './routes/auth.routes';
-import { errorMiddleware } from './middlewares/error.middleware';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
-import dotenv from 'dotenv';
+import express from "express";
+import userRouter from "./interfaces/routes/user.routes";
+import authRouter from "./interfaces/routes/auth.routes";
+import { errorMiddleware } from "./interfaces/middlewares/error.middleware";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import dotenv from "dotenv";
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -12,10 +12,10 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
-app.use('/api/auth', authRouter);
-app.use('/api/users', userRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/users", userRouter);
 
 app.use(errorMiddleware);
 
