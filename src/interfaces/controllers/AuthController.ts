@@ -20,8 +20,6 @@ import {
 
 import { ZodException } from "../../infrastructure/utils/errors/zod.errors";
 
-import { BadRequestException } from "../../infrastructure/utils/errors/http.errors";
-
 const isProduction = process.env.NODE_ENV === "production";
 
 const userRepository = new PrismaUserRepository();
