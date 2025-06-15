@@ -16,6 +16,10 @@ export class ResetPasswordUseCase {
 
   async execute(token: string, password: string) { 
 
+    if (!token) {
+      throw new BadRequestException("Token é obrigatório");
+    }
+
     if (!password) {
       throw new BadRequestException("Senha é obrigatória");
     }
