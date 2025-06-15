@@ -25,3 +25,9 @@ export const verifyEmailSchema = z.object({
     message: "O código deve conter 6 números.",
   }),
 });
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Email inválido"),
+});
+
+

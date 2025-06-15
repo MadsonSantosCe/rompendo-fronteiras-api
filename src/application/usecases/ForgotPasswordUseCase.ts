@@ -9,7 +9,6 @@ import {
   NotFoundException,
 } from "../../infrastructure/utils/errors/http.errors";
 
-
 export class ForgotPasswordUseCase {
   constructor(
     private userRepository: IUserRepository,
@@ -19,8 +18,8 @@ export class ForgotPasswordUseCase {
 
   async execute(email: string, clientUrl: string) {
     const user = await this.userRepository.findByEmail(email);
-
     if (!user) throw new NotFoundException("Email não encontrado");
+
     const existingOtp = await this.otpRepository.findValidOtpByUser(
       user.id,
       OtpType.PASSWORD_RESET

@@ -11,6 +11,7 @@ import { ForgotPasswordUseCase } from "../../application/usecases/ForgotPassword
 import { ResetPasswordUseCase } from "../../application/usecases/ResetPasswordUseCase";
 
 import {
+  forgotPasswordSchema,
   signInSchema,
   signUpSchema,
   verifyEmailSchema,
@@ -142,13 +143,10 @@ class AuthController {
   };
 
   forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
-    const { email } = req.body;
-
-    if (!email) {
-      throw new BadRequestException("E-mail é obrigatório");
-    }
+    const data = this.handleValidation(forgotPasswordSchema, req);
 
     try {
+      const { email } = data;
       await forgotPasswordUseCase.execute(email, process.env.CLIENT_URL || "");
       res
         .status(200)
