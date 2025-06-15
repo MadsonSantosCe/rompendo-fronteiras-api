@@ -1,8 +1,7 @@
+import { Response } from "express";
 import { IOtpRepository } from "../../domain/repositories/IOtpRepository";
 import { IUserRepository } from "../../domain/repositories/IUserRepository";
 import { OtpType } from "../../domain/entities/Otp";
-
-import { Response } from "express";
 import {
   generateToken,
   setCookie,

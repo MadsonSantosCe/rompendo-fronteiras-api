@@ -79,10 +79,17 @@ class AuthController {
     const data = this.handleValidation(signInSchema, req);
 
     try {
-      const user = await signInUseCase.execute(data);
-      res
-        .status(200)
-        .json({ message: "Usuário autenticado com sucesso", user });
+      const result = await signInUseCase.execute(data, res );
+      res.status(200).json({
+        message: "Usuário autenticado com sucesso",
+        accessToken: result.accessToken,
+        user: {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          verified: result.user.verified,
+        },
+      });
     } catch (error) {
       next(error);
     }
@@ -90,7 +97,7 @@ class AuthController {
 
   verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
     const data = this.handleValidation(verifyEmailSchema, req);
-    
+
     try {
       const { code } = data;
       const result = await verifyEmailUseCase.execute(code, res);
