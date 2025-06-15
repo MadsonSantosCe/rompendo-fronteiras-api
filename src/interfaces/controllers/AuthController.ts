@@ -12,6 +12,7 @@ import { ResetPasswordUseCase } from "../../application/usecases/ResetPasswordUs
 
 import {
   forgotPasswordSchema,
+  resetPasswordSchema,
   signInSchema,
   signUpSchema,
   verifyEmailSchema,
@@ -158,8 +159,8 @@ class AuthController {
 
   resetPassword = async (req: Request, res: Response, next: NextFunction) => {
     const { token } = req.params;
-    const data = this.handleValidation(forgotPasswordSchema, req);
-    
+    const data = this.handleValidation(resetPasswordSchema, req);
+
     try {
       const { password } = data;
       await resetPasswordUseCase.execute(token, password);
