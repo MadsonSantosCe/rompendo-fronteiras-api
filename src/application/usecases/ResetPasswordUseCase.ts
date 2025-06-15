@@ -20,10 +20,6 @@ export class ResetPasswordUseCase {
       throw new BadRequestException("Token é obrigatório");
     }
 
-    if (!password) {
-      throw new BadRequestException("Senha é obrigatória");
-    }
-
     const otp = await this.otpRepository.findValidOtp(
       token,
       OtpType.PASSWORD_RESET
