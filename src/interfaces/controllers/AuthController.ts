@@ -16,13 +16,9 @@ import {
   verifyEmailSchema,
 } from "../../application/schemas/auth.schema";
 
-import { verifyToken } from "../../infrastructure/utils/auth/jwt.utils";
 import { ZodException } from "../../infrastructure/utils/errors/zod.errors";
 
-import {
-  BadRequestException,
-  UnauthorizedException,
-} from "../../infrastructure/utils/errors/http.errors";
+import { BadRequestException } from "../../infrastructure/utils/errors/http.errors";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -79,7 +75,7 @@ class AuthController {
     const data = this.handleValidation(signInSchema, req);
 
     try {
-      const result = await signInUseCase.execute(data, res );
+      const result = await signInUseCase.execute(data, res);
       res.status(200).json({
         message: "Usuário autenticado com sucesso",
         accessToken: result.accessToken,
@@ -102,7 +98,7 @@ class AuthController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
     const data = this.handleValidation(verifyEmailSchema, req);
@@ -126,23 +122,20 @@ class AuthController {
   };
 
   refreshToken = async (req: Request, res: Response, next: NextFunction) => {
+    const refreshToken = req.cookies.refreshToken;
+
     try {
-      const refreshToken = req.cookies.refreshToken;
-      if (!refreshToken) {
-        throw new UnauthorizedException("Token de atualização ausente");
-      }
-
-      const decoded = verifyToken(
-        refreshToken,
-        process.env.JWT_REFRESH_SECRET || "secret"
-      );
-
-      if (!decoded?.id) {
-        throw new UnauthorizedException("Token inválido");
-      }
-
-      const user = await refreshTokenUseCase.execute(decoded.id);
-      res.status(200).json({ message: "Token atualizado com sucesso", user });
+      const result = await refreshTokenUseCase.execute(refreshToken);
+      res.status(200).json({
+        message: "Token atualizado com sucesso",
+        accessToken: result.accessToken,
+        user: {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          verified: result.user.verified,
+        },
+      });
     } catch (error) {
       next(error);
     }
