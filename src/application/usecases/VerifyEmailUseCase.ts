@@ -2,10 +2,19 @@ import { IOtpRepository } from "../../domain/repositories/IOtpRepository";
 import { IUserRepository } from "../../domain/repositories/IUserRepository";
 import { OtpType } from "../../domain/entities/Otp";
 
+import { Response } from "express";
+import {
+  generateToken,
+  setCookie,
+} from "../../infrastructure/utils/auth/jwt.utils";
+
 import {
   BadRequestException,
   NotFoundException,
 } from "../../infrastructure/utils/errors/http.errors";
+
+const SECRET = process.env.JWT_SECRET || "secret";
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "secret";
 
 export class VerifyEmailUseCase {
   constructor(
@@ -13,7 +22,7 @@ export class VerifyEmailUseCase {
     private userRepository: IUserRepository
   ) {}
 
-  async execute(code: string) {
+  async execute(code: string, res: Response) {
     const otp = await this.otpRepository.findValidOtp(
       code,
       OtpType.EMAIL_VERIFICATION
@@ -27,6 +36,18 @@ export class VerifyEmailUseCase {
     const updatedUser = await this.userRepository.updateVerified(user.id, true);
     await this.otpRepository.invalidateOtp(otp.id);
 
-    return updatedUser;
+    const accessToken = generateToken(updatedUser.id, SECRET, 24 * 60 * 60);
+    const refreshToken = generateToken(
+      updatedUser.id,
+      REFRESH_SECRET,
+      7 * 24 * 60 * 60
+    );
+
+    setCookie(refreshToken, res);
+
+    return {
+      user: updatedUser,
+      accessToken,
+    };
   }
 }

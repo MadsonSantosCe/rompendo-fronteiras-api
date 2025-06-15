@@ -16,13 +16,15 @@ import {
   verifyEmailSchema,
 } from "../../application/schemas/auth.schema";
 
-import { verifyToken } from "../../infrastructure/utils/auth/http.auth";
+import { verifyToken } from "../../infrastructure/utils/auth/jwt.utils";
 import { ZodException } from "../../infrastructure/utils/errors/zod.errors";
 
 import {
   BadRequestException,
   UnauthorizedException,
 } from "../../infrastructure/utils/errors/http.errors";
+
+const isProduction = process.env.NODE_ENV === "production";
 
 const userRepository = new PrismaUserRepository();
 const otpRepository = new PrismaOtpRepository();
@@ -50,7 +52,6 @@ const resetPasswordUseCase = new ResetPasswordUseCase(
 );
 
 class AuthController {
-  
   private handleValidation(schema: any, req: Request) {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
@@ -89,10 +90,20 @@ class AuthController {
 
   verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
     const data = this.handleValidation(verifyEmailSchema, req);
-
+    
     try {
-      const user = await verifyEmailUseCase.execute(data.code);
-      res.status(200).json({ message: "E-mail verificado com sucesso", user });
+      const { code } = data;
+      const result = await verifyEmailUseCase.execute(code, res);
+      res.status(200).json({
+        message: "E-mail verificado com sucesso",
+        accessToken: result.accessToken,
+        user: {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          verified: result.user.verified,
+        },
+      });
     } catch (error) {
       next(error);
     }
