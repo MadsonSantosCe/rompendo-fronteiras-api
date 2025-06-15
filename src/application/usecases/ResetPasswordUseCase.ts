@@ -14,7 +14,12 @@ export class ResetPasswordUseCase {
     private userRepository: IUserRepository
   ) {}
 
-  async execute(token: string, password: string) {
+  async execute(token: string, password: string) { 
+
+    if (!password) {
+      throw new BadRequestException("Senha é obrigatória");
+    }
+
     const otp = await this.otpRepository.findValidOtp(
       token,
       OtpType.PASSWORD_RESET

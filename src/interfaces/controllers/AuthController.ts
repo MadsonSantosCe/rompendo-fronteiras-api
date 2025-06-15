@@ -158,13 +158,10 @@ class AuthController {
 
   resetPassword = async (req: Request, res: Response, next: NextFunction) => {
     const { token } = req.params;
-    const { password } = req.body;
-
-    if (!password) {
-      throw new BadRequestException("Senha é obrigatória");
-    }
-
+    const data = this.handleValidation(forgotPasswordSchema, req);
+    
     try {
+      const { password } = data;
       await resetPasswordUseCase.execute(token, password);
       res.status(200).json({ message: "Senha redefinida com sucesso" });
     } catch (error) {
