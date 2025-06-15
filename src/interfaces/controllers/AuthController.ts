@@ -95,6 +95,15 @@ class AuthController {
     }
   };
 
+  signOut = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.clearCookie("refreshToken");
+      res.status(200).json({ message: "Usuário deslogado com sucesso" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
     const data = this.handleValidation(verifyEmailSchema, req);
 
