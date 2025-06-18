@@ -36,6 +36,10 @@ export const authorize = async (
       where: { id: decoded.id },
     });
 
+    if (!user) {
+      throw new UnauthorizedException("Usuário não encontrado");
+    }
+
     req.user = user;
 
     next();

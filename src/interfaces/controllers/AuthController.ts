@@ -19,6 +19,7 @@ import {
 } from "../../application/schemas/auth.schema";
 
 import { ZodException } from "../../infrastructure/utils/errors/zod.errors";
+import { UnauthorizedException } from "../../infrastructure/utils/errors/http.errors";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -171,11 +172,18 @@ class AuthController {
   UserInfo = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
-      res.status(200).json({ user });
+      res.status(200).json({
+        user: {
+          id: user?.id,
+          name: user?.name,
+          email: user?.email,
+          verified: user?.verified,
+        },
+      });
     } catch (error) {
       next(error);
     }
-  }; 
+  };
 }
 
 export default AuthController;
