@@ -16,7 +16,7 @@ declare global {
 
 export const authorize = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
