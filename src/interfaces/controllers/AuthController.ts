@@ -167,6 +167,17 @@ class AuthController {
       next(error);
     }
   };
+
+  UserInfo = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;      
+      if (!user) throw new Error("Usuário não encontrado");
+
+      res.status(200).json({ user });
+    } catch (error) {
+      next(error);
+    }
+  }; 
 }
 
 export default AuthController;
