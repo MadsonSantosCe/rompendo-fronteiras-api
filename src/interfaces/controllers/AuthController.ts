@@ -169,7 +169,7 @@ class AuthController {
     }
   };
 
-  UserInfo = async (req: Request, res: Response, next: NextFunction) => {
+  userInfo = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
       res.status(200).json({

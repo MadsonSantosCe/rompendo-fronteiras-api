@@ -12,6 +12,6 @@ authRoutes.post("/verify-email", authController.verifyEmail);
 authRoutes.post("/refresh-token", authController.refreshToken);
 authRoutes.post("/forgot-password", authController.forgotPassword);
 authRoutes.post("/reset-password/:token", authController.resetPassword);
-authRoutes.post("/verify-acsess-token", authorize, authController.UserInfo);
+authRoutes.post("/verify-acsess-token", authorize, authController.userInfo);
 
 export default authRoutes;
