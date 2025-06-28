@@ -27,23 +27,14 @@ export class AuthGuard implements CanActivate {
 
     const token = authHeader.split(" ")[1];
 
-    if (!token) {
-      throw new UnauthorizedException("Token não informado");
-    }
+    if (!token) throw new UnauthorizedException("Token não informado");
+    const payload = this.jwtTokenService.verifyToken(token);
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.id },
+    });
 
-    try {
-      const payload = this.jwtTokenService.verifyToken(token);
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.id },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException("Usuário não encontrado");
-      }
-      request["user"] = user;
-      return true;
-    } catch {
-      throw new UnauthorizedException("Token inválido");
-    }
+    if (!user) throw new UnauthorizedException("Usuário não encontrado");
+    request["user"] = user;
+    return true;
   }
 }
