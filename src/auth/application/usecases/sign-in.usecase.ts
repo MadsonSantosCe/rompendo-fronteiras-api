@@ -4,8 +4,8 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Response } from "express";
-import { IUserRepository } from "src/auth/domain/repositories/abstract-user.repository";
-import { ITokenService } from "src/auth/domain/services/abstract-token.service";
+import { IUserRepository } from "../../../auth/domain/repositories/abstract-user.repository";
+import { ITokenService } from "../../../auth/domain/services/abstract-token.service";
 import bcrypt from "bcryptjs";
 
 @Injectable()
