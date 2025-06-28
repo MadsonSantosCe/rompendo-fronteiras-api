@@ -92,7 +92,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @Get("me")
   @HttpCode(200)
-  async verifyToken(@Req() req) {
+  async getMe(@Req() req) {
     const user = req["user"];
     return { 
       user: {
