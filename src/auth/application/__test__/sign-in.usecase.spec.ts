@@ -1,62 +1,96 @@
+import { Test, TestingModule } from "@nestjs/testing";
 import { SignInUseCase } from "../usecases/sign-in.usecase";
-
-jest.mock("bcryptjs", () => ({
-  compare: jest.fn().mockResolvedValue(true),
-}));
+import { IUserRepository } from "../../domain/repositories/abstract-user.repository";
+import { ITokenService } from "../../domain/services/abstract-token.service";
+import { UnauthorizedException, ForbiddenException } from "@nestjs/common";
 
 describe("SignInUseCase", () => {
   let useCase: SignInUseCase;
+  let userRepository: jest.Mocked<IUserRepository>;
+  let tokenService: jest.Mocked<ITokenService>;
+  let res: any;
 
-  const mockUserRepository = {
-    findByEmail: jest.fn(),
-  };
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        SignInUseCase,
+        {
+          provide: IUserRepository,
+          useValue: {
+            findByEmail: jest.fn(),
+          },
+        },
+        {
+          provide: ITokenService,
+          useValue: {
+            generateToken: jest.fn(),
+            setRefreshTokenCookie: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
 
-  const mockJwtTokenService = {
-    generateToken: jest.fn(),
-    setRefreshTokenCookie: jest.fn(),
-  };
-
-  beforeAll(() => {
-    mockUserRepository.findByEmail.mockResolvedValue({
-      id: "user-id",
-      password: "hashed",
-      verified: true,
-    });
-
-    mockJwtTokenService.generateToken.mockReturnValue("mock-token");
-
-    useCase = new SignInUseCase(
-      mockUserRepository as any,
-      mockJwtTokenService as any
-    );
+    useCase = module.get(SignInUseCase);
+    userRepository = module.get(IUserRepository);
+    tokenService = module.get(ITokenService);
+    res = { cookie: jest.fn() };
   });
 
   it("should sign in user with correct credentials", async () => {
-    const res = {} as any;
+    const user = {
+      id: "user-id",
+      name: "Test User",
+      email: "test@example.com",
+      password: await require("bcryptjs").hash("123456", 10),
+      verified: true,
+    };
+
+    userRepository.findByEmail.mockResolvedValue(user);
+
+    tokenService.generateToken
+      .mockReturnValueOnce("access-token")
+      .mockReturnValueOnce("refresh-token");
+
     const result = await useCase.execute("test@example.com", "123456", res);
 
-    expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(
-      "test@example.com"
+    expect(userRepository.findByEmail).toHaveBeenCalledWith("test@example.com");
+    expect(tokenService.generateToken).toHaveBeenCalledTimes(2);
+    expect(tokenService.setRefreshTokenCookie).toHaveBeenCalledWith(
+      "refresh-token",
+      res
     );
-
+    
     expect(result).toMatchObject({
-      accessToken: "mock-token",
       user: {
-        id: "user-id",
-        verified: true,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        verified: user.verified,
       },
+      accessToken: "access-token",
     });
+  });
 
-    expect(mockJwtTokenService.generateToken).toHaveBeenCalledWith(
-      "user-id",
-      "7d"
-    );
+  it("should throw UnauthorizedException for invalid credentials", async () => {
+    userRepository.findByEmail.mockResolvedValue(null);
 
-    expect(mockJwtTokenService.generateToken).toHaveBeenCalledWith(
-      "user-id",
-      "24h"
-    );
+    await expect(
+      useCase.execute("test@example.com", "wrongpass", res)
+    ).rejects.toThrow(UnauthorizedException);
+  });
 
-    expect(mockJwtTokenService.generateToken).toHaveBeenCalledTimes(2);
+  it("should throw ForbiddenException if user is not verified", async () => {
+    const user = {
+      id: "user-id",
+      name: "Test User",
+      email: "test@example.com",
+      password: await require("bcryptjs").hash("123456", 10),
+      verified: false,
+    };
+    userRepository.findByEmail.mockResolvedValue(user);
+
+    await expect(
+      useCase.execute("test@example.com", "123456", res)
+    ).rejects.toThrow(ForbiddenException);
   });
 });

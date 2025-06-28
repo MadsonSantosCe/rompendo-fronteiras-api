@@ -1,7 +1,7 @@
 import { Injectable, ConflictException } from "@nestjs/common";
-import { IUserRepository } from "src/auth/domain/repositories/abstract-user.repository";
-import { IOtpRepository } from "src/auth/domain/repositories/abstract-otp.repository";
-import { IEmailService } from "src/auth/domain/services/abstract-email.service";
+import { IUserRepository } from "../../domain/repositories/abstract-user.repository";
+import { IOtpRepository } from "../../domain/repositories/abstract-otp.repository";
+import { IEmailService } from "../../domain/services/abstract-email.service";
 import { OtpType } from "../../domain/entities/otp.entity";
 import bcrypt from "bcryptjs";
 
