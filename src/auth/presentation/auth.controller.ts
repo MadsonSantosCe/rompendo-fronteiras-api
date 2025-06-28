@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Param,
   Post,
@@ -89,12 +90,11 @@ export class AuthController {
   }
 
   @UseGuards(AuthGuard)
-  @Post("verify-acsess-token")
+  @Get("me")
   @HttpCode(200)
   async verifyToken(@Req() req) {
     const user = req["user"];
     return { 
-      message: "Token válidado com sucesso", 
       user: {
         id: user?.id,
         name: user?.name,
