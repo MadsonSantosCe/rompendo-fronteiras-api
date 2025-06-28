@@ -13,13 +13,14 @@ enum OtpType {
 }
 
 model User {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   name        String
-  email       String   @unique
+  email       String      @unique
   password    String
-  verified    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  verified    Boolean     @default(false)  
+
+  created_at  DateTime    @default(now())
+  deleted_at  DateTime? 
 
   otps Otp[]
 
@@ -27,16 +28,17 @@ model User {
 }
 
 model Otp {
-  id          String     @id @default(uuid())
+  id          String      @id @default(uuid())
   code        String
-  userId      String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user_id     String      
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
   type        OtpType 
-  expiresAt   DateTime
-  createdAt   DateTime   @default(now())
-  deletionAt  DateTime?   
+  expires_at  DateTime
+
+  created_at  DateTime    @default(now())
+  deleted_at  DateTime? 
 
   @@map("user_otp")
-  @@index([userId, type, code])
-  @@index([userId])
+  @@index([user_id, type, code])
+  @@index([user_id])
 }
