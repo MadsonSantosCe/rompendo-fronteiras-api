@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { ITokenService } from "src/auth/domain/services/abstract-token.service";
+import { ITokenService } from "../../domain/services/abstract-token.service";
 import { Response } from "express";
 
 @Injectable()
