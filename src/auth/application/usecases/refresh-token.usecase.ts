@@ -3,8 +3,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { IUserRepository } from "src/auth/domain/repositories/abstract-user.repository";
-import { ITokenService } from "src/auth/domain/services/abstract-token.service";
+import { IUserRepository } from "../../domain/repositories/abstract-user.repository";
+import { ITokenService } from "../../domain/services/abstract-token.service";
 
 @Injectable()
 export class RefreshTokenUseCase {
