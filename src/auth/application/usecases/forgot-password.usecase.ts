@@ -1,12 +1,11 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { IOtpRepository } from "src/auth/domain/repositories/abstract-otp.repository";
-import { IUserRepository } from "src/auth/domain/repositories/abstract-user.repository";
-import { IEmailService } from "src/auth/domain/services/abstract-email.service";
+import { IOtpRepository } from "../../domain/repositories/abstract-otp.repository";
+import { IUserRepository } from "../../domain/repositories/abstract-user.repository";
+import { IEmailService } from "../../domain/services/abstract-email.service";
 import { OtpType } from "../../domain/entities/otp.entity";
 import { v4 as uuidv4 } from "uuid";
 
