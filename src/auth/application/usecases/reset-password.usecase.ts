@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { IOtpRepository } from "src/auth/domain/repositories/abstract-otp.repository";
-import { IUserRepository } from "src/auth/domain/repositories/abstract-user.repository";
+import { IOtpRepository } from "../../domain/repositories/abstract-otp.repository";
+import { IUserRepository } from "../../domain/repositories/abstract-user.repository";
 import { OtpType } from "../../domain/entities/otp.entity";
 import bcrypt from "bcryptjs";
 
